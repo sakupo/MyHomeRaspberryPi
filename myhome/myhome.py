@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import os, subprocess, shlex, asyncio
+import math, re
 from dotenv import load_dotenv
 
 from flask import Flask, request, abort
@@ -13,6 +14,7 @@ from linebot.exceptions import (
 from linebot.models import (
   MessageEvent, TextMessage, LocationMessage, TextSendMessage, TemplateSendMessage, CarouselTemplate, CarouselColumn
 )
+from src import weather
 
 load_dotenv()
 
@@ -89,7 +91,32 @@ def message_text(event):
     sentence = "所要時間わ。"+ req[1:] +"です."
     if req != "#" and req[0] != "＃":
       aplay("res/notice.wav")
-      say(sentence, False)  
+      say(sentence, False) 
+  #whether
+  elif req == "w" or req == "nw":
+    msg = "weather"+"リクエストを受け付けました"
+    data = weather.showCurrentWeather()
+    condition = data["forecasts"][0]["telop"]
+    '''
+    condition_en = data["weather"][0]["main"]
+    cond_list = (
+      ("Thunderstorm",  "雷"),
+      ("Drizzle", "弱い雨"),
+      ("Rain", "雨"),
+      ("Snow", "雪"),
+      ("Clear", "晴れ"),
+      ("Clouds", "曇り"),
+      ("Mist", "霧"),("Smoke", "煙"),("Haze", "薄い霧"),
+      ("Dust", "塵"),("Fog", "濃い霧"),("Sand", "砂"),
+      ("Ash", "灰"),("Squall", "豪雨"),("Tornado", "竜巻")
+    )
+    #パターンマッチ
+    condition = (lambda cond: next(val for key,val in cond_list if re.match(key, cond)))(condition_en)
+    '''
+    sentence = "今日の天気は," + condition + "です."
+    print(sentence)
+    #say(sentence, False)
+    
   #say
   else:
     msg = "sayリクエストを受け付けました"
@@ -116,4 +143,4 @@ def message_location(event):
 
 if __name__ == "__main__":
   port = int(os.getenv("PORT", 8000))
-  app.run(host="0.0.0.0", port=port, debug=False)
+  app.run(host="0.0.0.0", port=port, debug=True)
