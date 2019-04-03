@@ -1,7 +1,6 @@
 # coding: utf-8
 
 import os, subprocess, shlex, asyncio
-import math, re
 from dotenv import load_dotenv
 
 from flask import Flask, request, abort
@@ -14,7 +13,7 @@ from linebot.exceptions import (
 from linebot.models import (
   MessageEvent, TextMessage, LocationMessage, TextSendMessage, TemplateSendMessage, CarouselTemplate, CarouselColumn
 )
-from src import weather
+from src.weather import Weather
 
 load_dotenv()
 
@@ -75,16 +74,16 @@ def message_text(event):
     msg = "request:\n"
     msg += "  gohome: !\n"
     msg += "  time: #\n"
+    msg += "  weather: w/wc/wt/wtd\n"
     msg += "  say: (else)"
   #gohome
   elif req[0] == "!" or req[0] == "！":
     msg = "gohome"+"リクエストを受け付けました"
-    sentence1 = "い'まから,/;か'えってきま_ス."
-    sentence2 = "ただ'いま、" + req[1:] + "にいま_ス."    
-    aplay("res/notice.wav")
-    say(sentence1)
+    sentence = "い'まから,/;か'えってきま_ス."
     if req != "!" and req != "！":
-      say(sentence2)
+      sentence += "ただ'いま、" + req[1:] + "にいま_ス."    
+    aplay("res/notice.wav")
+    say(sentence)
   #time
   elif req[0] == "#" or req[0] == "＃":
     msg = "time"+"リクエストを受け付けました"
@@ -92,31 +91,25 @@ def message_text(event):
     if req != "#" and req[0] != "＃":
       aplay("res/notice.wav")
       say(sentence, False) 
-  #whether
-  elif req == "w" or req == "nw":
+  #weather
+  elif req[0] == "w":
     msg = "weather"+"リクエストを受け付けました"
-    data = weather.showCurrentWeather()
-    condition = data["forecasts"][0]["telop"]
-    '''
-    condition_en = data["weather"][0]["main"]
-    cond_list = (
-      ("Thunderstorm",  "雷"),
-      ("Drizzle", "弱い雨"),
-      ("Rain", "雨"),
-      ("Snow", "雪"),
-      ("Clear", "晴れ"),
-      ("Clouds", "曇り"),
-      ("Mist", "霧"),("Smoke", "煙"),("Haze", "薄い霧"),
-      ("Dust", "塵"),("Fog", "濃い霧"),("Sand", "砂"),
-      ("Ash", "灰"),("Squall", "豪雨"),("Tornado", "竜巻")
-    )
-    #パターンマッチ
-    condition = (lambda cond: next(val for key,val in cond_list if re.match(key, cond)))(condition_en)
-    '''
-    sentence = "今日の天気は," + condition + "です."
-    print(sentence)
-    #say(sentence, False)
-    
+    weather = Weather()
+    if req[1] == "c": #current
+      dateLabel = "只今"
+      condition = weather.showCurrentWeather() #OpenWeatherMap
+    elif req[1] == "t": #today
+      dateLabel = "今日"
+      data = weather.showTodayWeather() #Livedoor Weather Web Service
+      condition = data[0]
+      if req[2] == "d": #detail
+        forecast_text = data[1]
+    sentence = dateLabel + "の天気は," + condition + "です."
+    if forecast_text != "":
+      index = forecast_text.find("【") #【関東甲信地方】以下の情報を切り捨て
+      sentence += forecast_text[:index]
+    say(sentence, False)
+    del weather 
   #say
   else:
     msg = "sayリクエストを受け付けました"
