@@ -1,3 +1,9 @@
 # dotenv file
 *.env
 
+# AquestalkPi
+/myhome/aq_dic/aq_user.dic
+/myhome/aq_dic/aqdic.bin
+/myhome/aquestalkpi/*
+
+
