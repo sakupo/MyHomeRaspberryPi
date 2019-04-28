@@ -20,6 +20,7 @@ app = Flask(__name__)
 
 LINE_CHANNEL_ACCESS_TOKEN = os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
 LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
+OWNER_ID = os.environ["OWNER_ID"]
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
@@ -29,14 +30,21 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 def myhomeapi():
   signature = request.headers['X-Line-Signature']
 
-  body = request.get_data(as_text=True)
+  body = request.get_data(as_text=True, cache=False)
   app.logger.info("Request body: " + body)
+
   try:
     handler.handle(body, signature)
   except InvalidSignatureError:
     abort(400)
 
   return 'OK'
+
+def user_auth(event):
+  profile = line_bot_api.get_profile(event.source.user_id)
+  user_id = event.source.user_id
+  user_disp_name = profile.display_name # アカウント名
+  return user_id
 
 def say(msg, symbol=True):
   speed = "100"
@@ -59,7 +67,8 @@ def aplay(wavfile):
 def message_text(event):
   msg = None
   req = event.message.text
-
+  if (user_auth(event) != OWNER_ID):
+    raise InvalidSignatureError("user_auth error.")
   #リクエスト一覧
   #test
   if req == "a":
@@ -103,6 +112,8 @@ def message_text(event):
 
 @handler.add(MessageEvent, message=LocationMessage)
 def message_location(event):
+  if (user_auth(event) != OWNER_ID):
+    raise InvalidSignatureError("user_auth error.")
   location_name = event.message.title
   msg = "ただいま、" + location_name + "にいます"
   say(msg, False)
@@ -116,4 +127,4 @@ def message_location(event):
 
 if __name__ == "__main__":
   port = int(os.getenv("PORT", 8000))
-  app.run(host="0.0.0.0", port=port, debug=False)
+  app.run(host="0.0.0.0", port=port, debug=True)
