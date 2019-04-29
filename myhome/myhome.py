@@ -21,6 +21,10 @@ app = Flask(__name__)
 LINE_CHANNEL_ACCESS_TOKEN = os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
 LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
 OWNER_ID = os.environ["OWNER_ID"]
+TESTER_ID_1 = os.environ["TESTER_ID_1"]
+TESTER_ID_2 = os.environ["TESTER_ID_2"]
+# テスターに権限を付与するかどうか
+tester_authority = True
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
@@ -40,11 +44,21 @@ def myhomeapi():
 
   return 'OK'
 
-def user_auth(event):
+def get_user_id(event):
   profile = line_bot_api.get_profile(event.source.user_id)
   user_id = event.source.user_id
   user_disp_name = profile.display_name # アカウント名
   return user_id
+
+def user_auth(event, include_tester=True):
+  if (get_user_id(event) != OWNER_ID):
+    if (include_tester):
+      if (get_user_id(event) != TESTER_ID_1):
+        if (get_user_id(event) != TESTER_ID_2):
+          raise InvalidSignatureError("user_auth error.")
+    else:
+      raise InvalidSignatureError("user_auth error.")
+
 
 def say(msg, symbol=True):
   speed = "100"
@@ -65,10 +79,12 @@ def aplay(wavfile):
 
 @handler.add(MessageEvent, message=TextMessage)
 def message_text(event):
+  global tester_authority
   msg = None
   req = event.message.text
-  if (user_auth(event) != OWNER_ID):
-    raise InvalidSignatureError("user_auth error.")
+  # user authentication
+  user_auth(event, tester_authority)
+
   #リクエスト一覧
   #test
   if req == "a":
@@ -98,7 +114,18 @@ def message_text(event):
     sentence = "所要時間わ。"+ req[1:] +"です."
     if req != "#" and req[0] != "＃":
       aplay("res/notice.wav")
-      say(sentence, False)  
+      say(sentence, False)
+  #chmod テスター権限の変更
+  elif req == "chmod":
+    msg = "chmod"+"リクエストを受け付けました\n"
+    user_auth(event, False)
+    tester_authority = not tester_authority
+    msg += "変更後のテスター権限: " + str(tester_authority)
+  #status
+  elif req == "status":
+    msg = "status"+"リクエストを受け付けました\n"
+    user_auth(event, False)
+    msg += "テスター権限: " + str(tester_authority)
   #say
   else:
     msg = "sayリクエストを受け付けました"
@@ -112,8 +139,9 @@ def message_text(event):
 
 @handler.add(MessageEvent, message=LocationMessage)
 def message_location(event):
-  if (user_auth(event) != OWNER_ID):
-    raise InvalidSignatureError("user_auth error.")
+  # user authentication
+  user_auth(event, tester_authority)
+
   location_name = event.message.title
   msg = "ただいま、" + location_name + "にいます"
   say(msg, False)
