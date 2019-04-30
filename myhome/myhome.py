@@ -1,9 +1,11 @@
 # coding: utf-8
 
-import os, subprocess, shlex, asyncio
+import os, subprocess, shlex, asyncio, json
 from dotenv import load_dotenv
 
+import logging, logging.handlers
 from flask import Flask, request, abort
+
 from linebot import (
   LineBotApi, WebhookHandler
 )
@@ -18,6 +20,14 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# logging
+app.logger.setLevel(logging.INFO)
+app.config["TRAP_BAD_REQUEST_ERRORS"] = True
+loghandler = logging.handlers.RotatingFileHandler("log/request.log", "a+", maxBytes=3000, backupCount=5)
+loghandler.setLevel(logging.INFO) 
+loghandler.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s in %(module)s: %(message)s"))
+app.logger.addHandler(loghandler)
+
 LINE_CHANNEL_ACCESS_TOKEN = os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
 LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
 OWNER_ID = os.environ["OWNER_ID"]
@@ -30,31 +40,32 @@ line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 
-@app.route("/myhomeapi", methods=['POST'])
+@app.route("/myhomeapi", methods=["POST"])
 def myhomeapi():
-  signature = request.headers['X-Line-Signature']
+  signature = request.headers["X-Line-Signature"]
 
   body = request.get_data(as_text=True, cache=False)
-  app.logger.info("Request body: " + body)
+  event = json.loads(body)["events"][0]
+  app.logger.info("From: " + get_user_name(event["source"]["userId"]) + "\nContent: " + event["message"]["text"] + "\nRequest body: " + body)
 
   try:
     handler.handle(body, signature)
   except InvalidSignatureError:
     abort(400)
 
-  return 'OK'
+  return "OK"
 
-def get_user_id(event):
-  profile = line_bot_api.get_profile(event.source.user_id)
-  user_id = event.source.user_id
-  user_disp_name = profile.display_name # アカウント名
-  return user_id
+def get_user_name(user_id):
+  profile = line_bot_api.get_profile(user_id)
+  user_name = profile.display_name # アカウント名
+  return user_name
 
 def user_auth(event, include_tester=True):
-  if (get_user_id(event) != OWNER_ID):
+  user_id = event.source.user_id
+  if (user_id != OWNER_ID):
     if (include_tester):
-      if (get_user_id(event) != TESTER_ID_1):
-        if (get_user_id(event) != TESTER_ID_2):
+      if (user_id(event) != TESTER_ID_1):
+        if (user_id(event) != TESTER_ID_2):
           raise InvalidSignatureError("user_auth error.")
     else:
       raise InvalidSignatureError("user_auth error.")
@@ -155,4 +166,4 @@ def message_location(event):
 
 if __name__ == "__main__":
   port = int(os.getenv("PORT", 8000))
-  app.run(host="0.0.0.0", port=port, debug=False)
+  app.run(host="0.0.0.0", port=port, debug=True)

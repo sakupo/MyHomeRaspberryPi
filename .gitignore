@@ -6,4 +6,7 @@
 /myhome/aq_dic/aqdic.bin
 /myhome/aquestalkpi/*
 
+# log file
+*.log
+
 
