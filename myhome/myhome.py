@@ -64,8 +64,8 @@ def user_auth(event, include_tester=True):
   user_id = event.source.user_id
   if (user_id != OWNER_ID):
     if (include_tester):
-      if (user_id(event) != TESTER_ID_1):
-        if (user_id(event) != TESTER_ID_2):
+      if (user_id != TESTER_ID_1):
+        if (user_id != TESTER_ID_2):
           raise InvalidSignatureError("user_auth error.")
     else:
       raise InvalidSignatureError("user_auth error.")
