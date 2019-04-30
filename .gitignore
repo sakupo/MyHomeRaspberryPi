@@ -7,6 +7,6 @@
 /myhome/aquestalkpi/*
 
 # log file
-*.log
+*.log*
 
 

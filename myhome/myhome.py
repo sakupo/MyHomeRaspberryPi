@@ -23,7 +23,7 @@ app = Flask(__name__)
 # logging
 app.logger.setLevel(logging.INFO)
 app.config["TRAP_BAD_REQUEST_ERRORS"] = True
-loghandler = logging.handlers.RotatingFileHandler("log/request.log", "a+", maxBytes=3000, backupCount=5)
+loghandler = logging.handlers.RotatingFileHandler("log/request.log", "a+", maxBytes=15000, backupCount=5)
 loghandler.setLevel(logging.INFO) 
 loghandler.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s in %(module)s: %(message)s"))
 app.logger.addHandler(loghandler)
