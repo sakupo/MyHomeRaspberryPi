@@ -110,6 +110,9 @@ def message_text(event):
     msg += "  gohome: !\n"
     msg += "  time: #\n"
     msg += "  say: (else)"
+  #invalid request
+  elif req.find('"') != -1 or req.find('\\') != -1:
+    msg = "エラー: 無効な文字を検出しました"
   #gohome
   elif req[0] == "!" or req[0] == "！":
     msg = "gohome"+"リクエストを受け付けました"
