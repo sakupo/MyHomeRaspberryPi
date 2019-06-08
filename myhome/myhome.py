@@ -140,6 +140,24 @@ def message_text(event):
     msg = "status"+"リクエストを受け付けました\n"
     user_auth(event, False)
     msg += "テスター権限: " + str(tester_authority)
+  #log
+  elif req == "log":
+    msg = "log"+"リクエストを受け付けました\n"
+    user_auth(event, False)
+    logfile = open("log/request.log")
+    logdata = logfile.read()  # ファイル終端まで全て読んだデータを返す
+    logfile.close()
+    lines = logdata.split('\n') # 改行で区切る(改行文字そのものは戻り値のデータには含まれない)
+    linenum = len(lines)
+    if linenum > 12:
+      msg += lines[linenum-13] + "\n"
+      msg += lines[linenum-12] + "\n\n"      
+    if linenum > 9:
+      msg += lines[linenum-10] + "\n"
+      msg += lines[linenum-9] + "\n\n"
+    if linenum > 6:
+      msg += lines[linenum-7] + "\n"
+      msg += lines[linenum-6]
   #say
   else:
     msg = "sayリクエストを受け付けました"
