@@ -43,7 +43,6 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 @app.route("/myhomeapi", methods=["POST"])
 def myhomeapi():
   signature = request.headers["X-Line-Signature"]
-
   body = request.get_data(as_text=True, cache=False)
   event = json.loads(body)["events"][0]
   app.logger.info("From: " + get_user_name(event["source"]["userId"]) + "\nContent: " + event["message"]["text"] + "\nRequest body: " + body)
@@ -77,7 +76,7 @@ def say(msg, symbol=True):
     cmd1 = "AquesTalkPi -s " + speed + " -k \"" + msg + "\""
   else:
     cmd1 = "AquesTalkPi -s " + speed + " \"" + msg + "\""
-  cmd2 = "aplay"
+  cmd2 = "aplay -D plughw:1,0"
   process1=subprocess.Popen(shlex.split(cmd1),stdout=subprocess.PIPE)
   process2=subprocess.Popen(shlex.split(cmd2),stdin=process1.stdout)
   process2.wait()
@@ -85,7 +84,7 @@ def say(msg, symbol=True):
   #proc = subprocess.call( cmd .strip().split(" ") )
 
 def aplay(wavfile):
-  cmd = "aplay " + wavfile
+  cmd = "aplay -D plughw:1,0 " + wavfile
   proc =  subprocess.call( cmd.strip().split(" ") )
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -188,3 +187,4 @@ def message_location(event):
 if __name__ == "__main__":
   port = int(os.getenv("PORT", 8000))
   app.run(host="0.0.0.0", port=port, debug=False)
+
