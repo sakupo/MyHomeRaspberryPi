@@ -9,4 +9,7 @@
 # log file
 *.log*
 
+# python cache
+__pycache__
+
 
