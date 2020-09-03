@@ -57,7 +57,7 @@ def postSpeakerChannel(userName: str, location: str):
   url = SLACK_SPEAKER_CHANNEL_TOKEN
   message = f"いまからかえります"
   if len(location) > 0:
-    message += f" {location}"
+    message += f" @{location}"
   message += f" from {userName}"
   payload = {"text": message}
   r = requests.post(url, data=json.dumps(payload))
