@@ -1,8 +1,6 @@
 # MyHomeRaspberryPi
 **Raspberry Pi Server at home.**
 
-![](https://github.com/sakupo/MyHomeRaspberryPi/blob/images/img/MyHomeRSPi.png?raw=true)
-
 Slack または LINE clientをインターフェースとして，家のRaspberryPiに繋がるスピーカーを操作し，
 家にいる人に音声でメッセージを伝えます．
 
