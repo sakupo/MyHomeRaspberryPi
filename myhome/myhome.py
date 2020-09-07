@@ -2,6 +2,7 @@
 import uvicorn
 import os, subprocess, shlex, asyncio, json
 from dotenv import load_dotenv
+from src.aquestalk_util import romajiToKana
 import threading
 
 from fastapi import FastAPI
@@ -72,7 +73,9 @@ def makeGohomeText(userName: str, location: str):
   return message
 
 # say
-def saySomething(sentence: str):
+def saySomething(userName: str, message: str):
+  sentence  = romajiToKana(userName) + "さん,からのめっ'せーじです."
+  sentence += message
   aplay("res/notice.wav")
   say(sentence, False)
 
@@ -99,7 +102,7 @@ async def say_cmd(req: Request):
   body = await req.form()
   cmd = SlackCommand(**body)
   postThread = threading.Thread(target=postSpeakerChannel(makeSayText(cmd.user_name, cmd.text)))
-  sayThread  = threading.Thread(target=saySomething(cmd.text))
+  sayThread  = threading.Thread(target=saySomething(cmd.user_name, cmd.text))
   postThread.start()
   sayThread.start()
   return {"text": makePostText("say")}
