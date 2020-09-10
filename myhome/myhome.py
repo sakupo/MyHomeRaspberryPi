@@ -12,7 +12,20 @@ from pydantic import BaseModel
 from fastapi.encoders import jsonable_encoder
 
 load_dotenv()
+SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
 SLACK_SPEAKER_CHANNEL_TOKEN = os.environ["SLACK_SPEAKER_CHANNEL_TOKEN"]
+
+APP_HOME_VIEW = { "type": "home",
+                  "blocks": [
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "ようこそ！ここはHomeSpeakerのApp Homeです．"
+                      }
+                    }
+                  ]
+                }
 
 app = FastAPI()
 print("Start server...")
@@ -30,6 +43,13 @@ class SlackCommand(BaseModel):
   response_url: str
   trigger_id: str
   api_app_id: str
+
+# post response to Slack App Home
+def viewsPublish(user: str, view):
+  url = "https://slack.com/api/views.publish"
+  payload = {"token": SLACK_BOT_TOKEN, "user_id": user, "view": view}
+  headers = {"Content-type": "application/json; charset=UTF-8", "Authorization": "Bearer " + SLACK_BOT_TOKEN}
+  r = requests.post(url, data=json.dumps(payload), headers=headers)
 
 # post response to Slack channel
 def postSpeakerChannel(message: str):
@@ -106,6 +126,25 @@ async def say_cmd(req: Request):
   postThread.start()
   sayThread.start()
   return {"text": makePostText("say")}
+
+@app.post("/myhome/api/v1/apphome",
+          status_code=200)
+async def get_apphome(req: Request):
+  body = await req.json()
+  type = body["type"] 
+  if type == "url_verification":
+    return {"challenge": body["challenge"]}
+  if type == "event_callback":
+    event = body["event"]
+    if (event["type"] == "app_home_opened"):
+      viewsPublish(event["user"], APP_HOME_VIEW)
+
+@app.post("/myhome/api/v1/actions",
+          status_code=200)
+async def actions(req: Request):
+  body = await req.form()
+  print(body["payload"])
+  patload = body["payload"] 
 
 """
 if __name__ == "__main__":
