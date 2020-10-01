@@ -15,17 +15,42 @@ load_dotenv()
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
 SLACK_SPEAKER_CHANNEL_TOKEN = os.environ["SLACK_SPEAKER_CHANNEL_TOKEN"]
 
-APP_HOME_VIEW = { "type": "home",
-                  "blocks": [
-                    {
-                      "type": "section",
-                      "text": {
-                        "type": "mrkdwn",
-                        "text": "ようこそ！ここはHomeSpeakerのApp Homeです．"
-                      }
+APP_HOME_VIEW = {
+                "type": "home",
+                "blocks": [
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "ようこそ！ここはHomeSpeakerのApp Homeです．"
                     }
-                  ]
-                }
+                  },
+                  {
+                    "type": "divider"
+                  },
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "*使用可能なコマンド*"
+                    }
+                  },
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "`/say [メッセージ]`: メッセージを伝えるとき"
+                    }
+                  },
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "`/go [地名]`: 家に帰るとき"
+                    }
+                  }
+                ]
+              }
 
 app = FastAPI()
 print("Start server...")
@@ -77,8 +102,8 @@ def aplay(wavfile):
   proc =  subprocess.call( cmd.strip().split(" ") )
 
 # gohome
-def sayGohome(location: str):
-  sentence1 = "い'まから,/;か'えってきま_ス."
+def sayGohome(userName: str, location: str):
+  sentence1 = "い'まから,/;" + romajiToKana(userName) + "さんがか'えってきま_ス."
   sentence2 = "ただ'いま、" + location + "にいま_ス."    
   aplay("res/notice.wav")
   say(sentence1)
@@ -94,7 +119,7 @@ def makeGohomeText(userName: str, location: str):
 
 # say
 def saySomething(userName: str, message: str):
-  sentence  = romajiToKana(userName) + "さん,からのめっ'せーじです."
+  sentence  = romajiToKana(userName) + "さん,からのめっせーじです."
   sentence += message
   aplay("res/notice.wav")
   say(sentence, False)
@@ -111,7 +136,7 @@ async def gohome_cmd(req: Request):
   body = await req.form()
   cmd = SlackCommand(**body)
   postThread = threading.Thread(target=postSpeakerChannel(makeGohomeText(cmd.user_name, cmd.text)))
-  sayThread  = threading.Thread(target=sayGohome(cmd.text))
+  sayThread  = threading.Thread(target=sayGohome(cmd.user_name, cmd.text))
   postThread.start()
   sayThread.start()
   return {"text": makePostText("gohome")}
